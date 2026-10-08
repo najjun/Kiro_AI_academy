@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Philip Morris 글로벌 전략 동향 · Amazon Bedrock AI 분석</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#131a2e; --panel2:#1a2440; --line:#263252;
+    --txt:#e8edf7; --muted:#93a0bd; --accent:#4f8cff; --accent2:#22d3a6;
+    --sf:#22d3a6; --zyn:#4f8cff; --region:#f6c344; --mna:#b388ff; --esg:#ff7a8a; --fin:#64b5ff;
+    --ok:#22d3a6; --warn:#f6c344; --bad:#ff7a8a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Segoe UI",Pretendard,-apple-system,"Malgun Gothic",sans-serif;
+    background:linear-gradient(160deg,#0b1020,#0d1428 60%,#0b1020); color:var(--txt);
+    line-height:1.55;
+  }
+  header{
+    padding:28px 32px 20px; border-bottom:1px solid var(--line);
+    background:rgba(19,26,46,.6); backdrop-filter:blur(6px);
+    position:sticky; top:0; z-index:20;
+  }
+  header h1{margin:0;font-size:22px;letter-spacing:.3px}
+  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  .badges{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--panel2)}
+  .badge.hl{color:var(--accent2);border-color:#1f5e4e}
+  #aiStatus{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
+  #aiStatus.live{color:var(--ok);border-color:#1f5e4e}
+  #aiStatus.demo{color:var(--warn);border-color:#5e4e1f}
+
+  nav{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:92px;z-index:19;overflow-x:auto}
+  nav button{
+    background:none;border:none;color:var(--muted);padding:14px 16px;cursor:pointer;
+    font-size:14px;border-bottom:2px solid transparent;white-space:nowrap;font-weight:600;
+  }
+  nav button:hover{color:var(--txt)}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  main{padding:24px 32px 64px;max-width:1200px;margin:0 auto}
+  section{display:none;animation:fade .35s ease}
+  section.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  h2{font-size:19px;margin:4px 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:860px){.g3,.g2{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h3{margin:0 0 8px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:13px}
+
+  .kpi{display:flex;flex-direction:column;gap:4px}
+  .kpi .val{font-size:26px;font-weight:700}
+  .kpi .lbl{color:var(--muted);font-size:12px}
+  .kpi .delta{font-size:12px;font-weight:600}
+  .up{color:var(--ok)} .down{color:var(--bad)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  tr:hover td{background:rgba(79,140,255,.05)}
+
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;font-weight:700}
+  .t-sf{background:rgba(34,211,166,.15);color:#5fe0bf}
+  .t-zyn{background:rgba(79,140,255,.15);color:#86b0ff}
+  .t-region{background:rgba(246,195,68,.15);color:#f6c344}
+  .t-mna{background:rgba(179,136,255,.15);color:#c4a7ff}
+  .t-esg{background:rgba(255,122,138,.15);color:#ff9aa6}
+  .t-fin{background:rgba(100,181,255,.15);color:#9fccff}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 16px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  /* 바 차트 */
+  .bar-row{display:flex;align-items:center;gap:12px;margin:10px 0}
+  .bar-label{width:160px;font-size:13px;color:var(--txt);flex-shrink:0}
+  .bar-track{flex:1;background:var(--panel2);border-radius:999px;height:22px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:999px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:700;color:#0b1020}
+  .bar-val{width:48px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  /* 라인(SVG) */
+  .trend-wrap{overflow-x:auto}
+
+  /* AI 영역 */
+  textarea,input[type=text]{
+    width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    color:var(--txt);padding:12px;font-size:14px;font-family:inherit;resize:vertical;
+  }
+  textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent)}
+  button.btn{
+    background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 20px;
+    font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s;
+  }
+  button.btn:hover{opacity:.88}
+  button.btn:disabled{opacity:.5;cursor:not-allowed}
+  button.btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .ai-out{
+    margin-top:14px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:16px;white-space:pre-wrap;font-size:13.5px;min-height:60px;color:var(--txt);
+  }
+  .ai-out.empty{color:var(--muted)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .chip{font-size:12px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--panel2);cursor:pointer}
+  .chip:hover{color:var(--txt);border-color:var(--accent)}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .foot{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+  ul.insights{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+  ul.insights li{margin:4px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Philip Morris International — 글로벌 사업 전략 동향</h1>
+  <p>Amazon Bedrock 기반 AI 전략 분석 대시보드 · 무연 제품 전환 / ZYN / 지역별 / M&amp;A / ESG</p>
+  <div class="badges">
+    <span class="badge hl">Amazon Bedrock</span>
+    <span class="badge">Smoke-Free Future</span>
+    <span class="badge">전략 동향 분석</span>
+    <span id="aiStatus">AI 상태 확인 중…</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">개요</button>
+  <button data-tab="themes">전략 테마</button>
+  <button data-tab="trend">동향 추이</button>
+  <button data-tab="summarize">AI 요약 분석</button>
+  <button data-tab="qa">AI Q&amp;A</button>
+</nav>
+
+<main>
+  <!-- 개요 -->
+  <section id="overview" class="active">
+    <h2>전략 개요</h2>
+    <p class="sub">PMI의 핵심 전략 지표와 포트폴리오 전환 현황 (※ 수치는 데모용 예시값)</p>
+    <div class="grid g3">
+      <div class="card kpi">
+        <span class="lbl">무연 제품 매출 비중 (추정)</span>
+        <span class="val">~40%</span>
+        <span class="delta up">▲ 전환 가속</span>
+      </div>
+      <div class="card kpi">
+        <span class="lbl">핵심 성장 제품</span>
+        <span class="val">IQOS · ZYN</span>
+        <span class="delta">가열담배 · 니코틴 파우치</span>
+      </div>
+      <div class="card kpi">
+        <span class="lbl">전략 비전</span>
+        <span class="val">Smoke-Free</span>
+        <span class="delta">연소 제품 → 무연 전환</span>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card">
+        <h3>핵심 전략 방향</h3>
+        <ul class="insights">
+          <li>전통 궐련 중심에서 <b>무연 제품(Smoke-Free)</b> 포트폴리오로 구조 전환</li>
+          <li><b>IQOS</b> 글로벌 확장 및 <b>ZYN</b>(니코틴 파우치) 미국 시장 급성장</li>
+          <li>지역별 규제 환경에 맞춘 차별화 전략 및 M&amp;A를 통한 역량 확보</li>
+          <li>ESG·공중보건 규제 대응을 통한 지속가능성 강화</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>이 페이지 사용법</h3>
+        <p>
+          · <b>전략 테마</b>: 6개 전략 축별 동향을 확인합니다.<br>
+          · <b>동향 추이</b>: 무연 제품 매출 비중 추이를 시각화합니다.<br>
+          · <b>AI 요약 분석</b>: 뉴스·보고서 텍스트를 붙여넣으면 Bedrock이 요약합니다.<br>
+          · <b>AI Q&amp;A</b>: PMI 전략에 대해 자연어로 질문합니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 전략 테마 -->
+  <section id="themes">
+    <h2>전략 테마별 동향</h2>
+    <p class="sub">6개 전략 축에 따른 주요 동향 및 시사점</p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>테마</th><th>주요 동향</th><th>시사점</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pill t-sf">무연 전환</span></td>
+            <td>IQOS 등 가열담배 중심 포트폴리오 전환 가속, 무연 매출 비중 확대</td>
+            <td>연소 제품 의존도 축소, 신규 성장 동력 확보</td>
+          </tr>
+          <tr>
+            <td><span class="pill t-zyn">ZYN</span></td>
+            <td>미국 니코틴 파우치 시장에서 ZYN 수요 급증, 생산 능력 증설</td>
+            <td>구강용 니코틴 카테고리 선점, 공급 확대가 관건</td>
+          </tr>
+          <tr>
+            <td><span class="pill t-region">지역별</span></td>
+            <td>미국·EU 규제 강화, 신흥시장 성장 기회 병존</td>
+            <td>시장별 규제·소비 특성에 맞춘 차별화 필요</td>
+          </tr>
+          <tr>
+            <td><span class="pill t-mna">M&amp;A</span></td>
+            <td>무연/웰니스 역량 확보를 위한 인수 및 R&amp;D 투자</td>
+            <td>포트폴리오 다각화, 통합 시너지 실행력이 중요</td>
+          </tr>
+          <tr>
+            <td><span class="pill t-esg">ESG</span></td>
+            <td>공중보건 규제 및 지속가능성 공시 대응 강화</td>
+            <td>브랜드 신뢰도·규제 리스크 관리에 직결</td>
+          </tr>
+          <tr>
+            <td><span class="pill t-fin">재무</span></td>
+            <td>무연 제품 매출 비중 상승이 수익 구조에 반영</td>
+            <td>전환 속도가 중장기 실적 변동성에 영향(추정)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 동향 추이 -->
+  <section id="trend">
+    <h2>무연 제품 매출 비중 추이</h2>
+    <p class="sub">연도별 무연 제품 매출 비중 (※ 데모용 예시 데이터)</p>
+    <div class="card">
+      <div id="bars"></div>
+      <div class="legend" style="margin-top:16px">
+        <span><i class="dot" style="background:var(--sf)"></i> 무연 제품 매출 비중(%)</span>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>해석</h3>
+      <p>무연 제품 매출 비중이 지속적으로 상승하는 추세로, PMI의 Smoke-Free 전환 전략이
+         재무 구조에 점진적으로 반영되고 있음을 시사합니다. (수치는 예시이며 실제 값과 다를 수 있습니다.)</p>
+    </div>
+  </section>
+
+  <!-- AI 요약 분석 -->
+  <section id="summarize">
+    <h2>AI 요약 분석 <span class="badge hl">Bedrock</span></h2>
+    <p class="sub">뉴스 기사, IR 자료, 보고서 등 전략 관련 텍스트를 붙여넣으면 AI가 요약하고 테마별 시사점을 제시합니다.</p>
+    <div class="card">
+      <textarea id="sumInput" rows="7" placeholder="예) PMI 분기 실적 보도자료, 전략 발표 내용, 뉴스 기사 등을 여기에 붙여넣으세요."></textarea>
+      <div class="chips">
+        <span class="chip" data-sample="sum1">샘플 텍스트 1</span>
+        <span class="chip" data-sample="sum2">샘플 텍스트 2</span>
+      </div>
+      <button class="btn" id="sumBtn">AI 요약 생성</button>
+      <div class="ai-out empty" id="sumOut">요약 결과가 여기에 표시됩니다.</div>
+    </div>
+  </section>
+
+  <!-- AI Q&A -->
+  <section id="qa">
+    <h2>AI Q&amp;A <span class="badge hl">Bedrock</span></h2>
+    <p class="sub">PMI의 글로벌 사업 전략에 대해 자연어로 질문하세요.</p>
+    <div class="card">
+      <input type="text" id="qInput" placeholder="예) PMI의 미국 시장 전략은 무엇인가요?" />
+      <div class="chips">
+        <span class="chip" data-q="PMI의 무연 제품 전환 전략을 요약해줘">무연 전환 전략</span>
+        <span class="chip" data-q="ZYN의 미국 시장 성장 전략은?">ZYN 성장 전략</span>
+        <span class="chip" data-q="PMI가 직면한 주요 규제 리스크는?">규제 리스크</span>
+        <span class="chip" data-q="PMI의 최근 M&A 및 투자 동향은?">M&amp;A 동향</span>
+      </div>
+      <button class="btn" id="qBtn">질문하기</button>
+      <div class="ai-out empty" id="qOut">답변이 여기에 표시됩니다.</div>
+    </div>
+  </section>
+
+  <div class="foot">
+    ⚠️ 본 페이지의 수치·분석은 데모 및 참고용이며 투자 판단의 근거가 아닙니다.
+    AI 생성 결과는 오류를 포함할 수 있으므로 원문 검증이 필요합니다.
+    실제 AI 분석을 위해서는 백엔드 서버에 AWS 자격증명과 Bedrock 모델 액세스가 필요합니다.
+  </div>
+</main>
+
+<script>
+  // ---- 탭 전환 ----
+  document.querySelectorAll('nav button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('nav button').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('section').forEach(function (s) { s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---- 동향 추이 바 차트 ----
+  var trendData = [
+    { year: '2021', val: 29 },
+    { year: '2022', val: 32 },
+    { year: '2023', val: 36 },
+    { year: '2024', val: 39 },
+    { year: '2025(E)', val: 42 }
+  ];
+  var barsEl = document.getElementById('bars');
+  var maxVal = Math.max.apply(null, trendData.map(function (d) { return d.val; }));
+  barsEl.innerHTML = trendData.map(function (d) {
+    var w = Math.round((d.val / maxVal) * 100);
+    return '<div class="bar-row">' +
+      '<div class="bar-label">' + d.year + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + w + '%;background:var(--sf)">' + d.val + '%</div></div>' +
+      '<div class="bar-val">' + d.val + '%</div>' +
+      '</div>';
+  }).join('');
+
+  // ---- 샘플 텍스트 ----
+  var samples = {
+    sum1: 'Philip Morris International reported continued growth in its smoke-free product category, ' +
+      'driven by strong IQOS performance in Europe and Japan, and rapid ZYN nicotine pouch growth in the United States. ' +
+      'The company reiterated its ambition to become a predominantly smoke-free business, with smoke-free products ' +
+      'accounting for an increasing share of total net revenues.',
+    sum2: 'PMI는 미국 니코틴 파우치 브랜드 ZYN의 수요 급증에 대응하기 위해 생산 능력을 대폭 확대한다고 발표했다. ' +
+      '또한 IQOS의 미국 시장 재진입 및 글로벌 확장을 추진하며, 규제 당국과의 협의 및 공중보건 관련 데이터 제출을 ' +
+      '강화하고 있다. 회사는 무연 제품 중심의 포트폴리오 전환을 지속 가속화할 계획이다.'
+  };
+  document.querySelectorAll('.chip[data-sample]').forEach(function (c) {
+    c.addEventListener('click', function () {
+      document.getElementById('sumInput').value = samples[c.dataset.sample];
+    });
+  });
+  document.querySelectorAll('.chip[data-q]').forEach(function (c) {
+    c.addEventListener('click', function () {
+      document.getElementById('qInput').value = c.dataset.q;
+    });
+  });
+
+  // ---- API 호출 유틸 ----
+  function setStatus(usedBedrock) {
+    var el = document.getElementById('aiStatus');
+    if (usedBedrock) {
+      el.textContent = '● Bedrock 연결됨 (실시간 AI)';
+      el.className = 'live';
+    } else {
+      el.textContent = '● 데모 모드 (Bedrock 미연결)';
+      el.className = 'demo';
+    }
+  }
+
+  async function callApi(path, body) {
+    var res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var err = await res.json().catch(function () { return {}; });
+      throw new Error(err.error || ('요청 실패 (HTTP ' + res.status + ')'));
+    }
+    return res.json();
+  }
+
+  // ---- 요약 ----
+  var sumBtn = document.getElementById('sumBtn');
+  sumBtn.addEventListener('click', async function () {
+    var text = document.getElementById('sumInput').value.trim();
+    var out = document.getElementById('sumOut');
+    if (!text) { out.className = 'ai-out'; out.textContent = '먼저 분석할 텍스트를 입력하세요.'; return; }
+    sumBtn.disabled = true;
+    out.className = 'ai-out';
+    out.innerHTML = '<span class="spinner"></span>AI가 분석 중입니다…';
+    try {
+      var data = await callApi('/api/summarize', { text: text });
+      out.textContent = data.result;
+      setStatus(data.used_bedrock);
+    } catch (e) {
+      out.textContent = '오류: ' + e.message + '\n(백엔드 서버가 실행 중인지 확인하세요.)';
+    } finally {
+      sumBtn.disabled = false;
+    }
+  });
+
+  // ---- Q&A ----
+  var qBtn = document.getElementById('qBtn');
+  async function askQuestion() {
+    var q = document.getElementById('qInput').value.trim();
+    var out = document.getElementById('qOut');
+    if (!q) { out.className = 'ai-out'; out.textContent = '질문을 입력하세요.'; return; }
+    qBtn.disabled = true;
+    out.className = 'ai-out';
+    out.innerHTML = '<span class="spinner"></span>AI가 답변을 생성 중입니다…';
+    try {
+      var data = await callApi('/api/ask', { question: q });
+      out.textContent = data.result;
+      setStatus(data.used_bedrock);
+    } catch (e) {
+      out.textContent = '오류: ' + e.message + '\n(백엔드 서버가 실행 중인지 확인하세요.)';
+    } finally {
+      qBtn.disabled = false;
+    }
+  }
+  qBtn.addEventListener('click', askQuestion);
+  document.getElementById('qInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') askQuestion();
+  });
+
+  // ---- 상태 체크 ----
+  fetch('/api/health').then(function (r) { return r.json(); }).then(function (d) {
+    setStatus(d.bedrock_client === true);
+  }).catch(function () {
+    document.getElementById('aiStatus').textContent = '● 백엔드 미연결';
+    document.getElementById('aiStatus').className = 'demo';
+  });
+</script>
+</body>
+</html>
