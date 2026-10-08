@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IFRS 18 대응 대시보드 · 반도체 제조업 (SAP S/4HANA 1909 · FI)</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#131a2e; --panel2:#1a2440; --line:#263252;
+    --txt:#e8edf7; --muted:#93a0bd; --accent:#4f8cff; --accent2:#22d3a6;
+    --op:#4f8cff; --inv:#f6c344; --fin:#ff7a8a; --tax:#b388ff; --disc:#64748b;
+    --ok:#22d3a6; --warn:#f6c344; --bad:#ff7a8a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Segoe UI",Pretendard,-apple-system,"Malgun Gothic",sans-serif;
+    background:linear-gradient(160deg,#0b1020,#0d1428 60%,#0b1020); color:var(--txt);
+    line-height:1.55;
+  }
+  header{
+    padding:28px 32px 20px; border-bottom:1px solid var(--line);
+    background:rgba(19,26,46,.6); backdrop-filter:blur(6px);
+    position:sticky; top:0; z-index:20;
+  }
+  header h1{margin:0;font-size:22px;letter-spacing:.3px}
+  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  .badges{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+  .badge{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--panel2)}
+  .badge.hl{color:var(--accent2);border-color:#1f5e4e}
+
+  nav{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:92px;z-index:19;overflow-x:auto}
+  nav button{
+    background:none;border:none;color:var(--muted);padding:14px 16px;cursor:pointer;
+    font-size:14px;border-bottom:2px solid transparent;white-space:nowrap;font-weight:600;
+  }
+  nav button:hover{color:var(--txt)}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  main{padding:24px 32px 64px;max-width:1200px;margin:0 auto}
+  section{display:none;animation:fade .35s ease}
+  section.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  h2{font-size:19px;margin:4px 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:860px){.g3,.g2{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h3{margin:0 0 8px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:13px}
+
+  .kpi{display:flex;flex-direction:column;gap:4px}
+  .kpi .val{font-size:26px;font-weight:700}
+  .kpi .lbl{color:var(--muted);font-size:12px}
+  .kpi .delta{font-size:12px;font-weight:600}
+  .up{color:var(--ok)} .down{color:var(--bad)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:hover td{background:rgba(79,140,255,.05)}
+
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;font-weight:700}
+  .cat-op{background:rgba(79,140,255,.15);color:#86b0ff}
+  .cat-inv{background:rgba(246,195,68,.15);color:#f6c344}
+  .cat-fin{background:rgba(255,122,138,.15);color:#ff9aa6}
+  .cat-tax{background:rgba(179,136,255,.15);color:#c4a7ff}
+  .cat-disc{background:rgba(100,116,139,.2);color:#aab6cc}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 16px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .toolbar label{font-size:13px;color:var(--muted)}
+  select,input[type=range]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px}
+
+  .barrow{display:grid;grid-template-columns:170px 1fr 110px;align-items:center;gap:12px;margin:9px 0;font-size:13px}
+  .bartrack{background:var(--panel2);border-radius:6px;height:22px;position:relative;overflow:hidden}
+  .barfill{height:100%;border-radius:6px;transition:width .6s ease}
+
+  .impact{display:grid;grid-template-columns:1fr;gap:12px}
+  .impact .row{display:grid;grid-template-columns:160px 1fr;gap:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+  .impact .mod{font-weight:700;color:var(--accent)}
+  .impact small{color:var(--muted)}
+  @media(max-width:700px){.impact .row{grid-template-columns:1fr}}
+
+  .sev{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700;margin-left:8px}
+  .sev-h{background:rgba(255,122,138,.2);color:#ff9aa6}
+  .sev-m{background:rgba(246,195,68,.2);color:#f6c344}
+  .sev-l{background:rgba(34,211,166,.2);color:#5fe6c3}
+
+  .timeline{position:relative;margin-left:12px;padding-left:26px;border-left:2px solid var(--line)}
+  .phase{position:relative;margin-bottom:22px}
+  .phase::before{content:"";position:absolute;left:-33px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--accent);border:3px solid var(--bg)}
+  .phase h4{margin:0 0 4px;font-size:15px}
+  .phase .when{font-size:12px;color:var(--accent2);font-weight:700}
+  .phase ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
+
+  .check{list-style:none;padding:0;margin:0}
+  .check li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+  .check .box{flex:0 0 18px;width:18px;height:18px;border:2px solid var(--line);border-radius:5px;margin-top:1px;display:grid;place-items:center;font-size:12px}
+  .check li.done .box{background:var(--ok);border-color:var(--ok);color:#06241b}
+  .check li.done span{color:var(--muted);text-decoration:line-through}
+
+  .note{font-size:12px;color:var(--muted);margin-top:10px}
+  .mpm-box{border:1px dashed #2f6b58;background:rgba(34,211,166,.06);border-radius:12px;padding:16px}
+  footer{padding:18px 32px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);text-align:center}
+  code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:12px;color:#9fd0ff}
+</style>
+</head>
+<body>
+<header>
+  <h1>IFRS 18 대응 대시보드 — 반도체 제조업</h1>
+  <p>신(新) 재무제표 표시·공시 기준이 SAP FI에 미치는 영향과 대응 방안 (가상 사례: <b>삼진세미컨덕터㈜</b>)</p>
+  <div class="badges">
+    <span class="badge hl">IFRS 18 전체</span>
+    <span class="badge">SAP S/4HANA 1909</span>
+    <span class="badge">모듈: FI (재무회계)</span>
+    <span class="badge">업종: 반도체 제조</span>
+    <span class="badge">최초적용 가정: 2027 회계연도</span>
+  </div>
+</header>
+
+<nav id="nav">
+  <button class="active" data-tab="overview">① IFRS 18 개요</button>
+  <button data-tab="reclass">② 손익 재분류 시뮬레이터</button>
+  <button data-tab="sapfi">③ SAP FI 영향 매트릭스</button>
+  <button data-tab="roadmap">④ 대응 로드맵 &amp; 체크리스트</button>
+</nav>
+
+<main>
+  <!-- ===================== ① 개요 ===================== -->
+  <section id="overview" class="active">
+    <h2>IFRS 18 핵심 3대 변화</h2>
+    <p class="sub">IFRS 18 「재무제표의 표시와 공시」는 IAS 1을 대체하며, 손익계산서의 비교가능성과 투명성을 높이는 데 초점을 둡니다. 2027.1.1 이후 개시 회계연도부터 의무 적용(조기적용 허용).</p>
+
+    <div class="grid g3">
+      <div class="card">
+        <h3>1. 손익계산서 5개 범주 구분</h3>
+        <p>모든 수익·비용을 <b>영업(Operating)·투자(Investing)·재무(Financing)·법인세·중단영업</b>으로 분류하고, 신규 소계인 <b>영업이익</b>과 <b>재무·법인세차감전이익</b>을 의무 표시합니다.</p>
+      </div>
+      <div class="card">
+        <h3>2. 경영진정의 성과지표(MPM) 공시</h3>
+        <p>경영진이 외부에 사용하는 비(非)GAAP 지표(예: 조정 EBITDA)를 주석에 정의·조정내역과 함께 공시해야 합니다. 반도체 업종의 '조정 영업이익'이 대표적입니다.</p>
+      </div>
+      <div class="card">
+        <h3>3. 비용의 집계·분해 공시</h3>
+        <p>손익계산서상 비용을 기능별로 표시한 경우, 성격별(감가상각·종업원급여·원재료 등) 분해 내역을 주석에 제공해야 합니다. 집계·분해(aggregation/disaggregation) 원칙 강화.</p>
+      </div>
+    </div>
+
+    <h2 style="margin-top:28px">반도체 제조업에서 특히 중요한 이유</h2>
+    <p class="sub">대규모 설비투자·R&D·외환·지분법 손익이 혼재되어 '무엇이 영업성과인가'가 모호했던 업종입니다.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3>자본집약 구조 → 범주 구분 효과 큼</h3>
+        <p>Fab(생산라인) 감가상각·리스가 막대해 <b>영업</b>이익과 <b>투자/재무</b> 손익의 구분이 투자자 판단에 결정적입니다. 설비 처분손익, 지분법 투자손익의 범주 귀속이 핵심 쟁점입니다.</p>
+      </div>
+      <div class="card">
+        <h3>경기순환·환노출 → MPM 공시 수요</h3>
+        <p>메모리 사이클과 USD 매출 구조상 '조정 영업이익/EBITDA'를 IR에서 상시 사용 → IFRS 18 하에서 <b>MPM 정식 공시 의무</b> 대상이 됩니다.</p>
+      </div>
+    </div>
+
+    <div class="mpm-box" style="margin-top:16px">
+      <h3 style="margin:0 0 6px">💡 MPM 예시 — 조정 영업이익 (삼진세미컨덕터)</h3>
+      <p class="note" style="margin:0">
+        영업이익(IFRS 18 기준) &nbsp;+&nbsp; 일회성 재고평가손실 환입 &nbsp;−&nbsp; 설비 손상차손 &nbsp;+&nbsp; 주식보상비용 &nbsp;=&nbsp; <b style="color:var(--accent2)">조정 영업이익(MPM)</b>
+        → 조정 항목 각각을 주석에 정의하고 세효과까지 공시해야 함.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== ② 재분류 시뮬레이터 ===================== -->
+  <section id="reclass">
+    <h2>손익 재분류 시뮬레이터 — IAS 1 → IFRS 18</h2>
+    <p class="sub">삼진세미컨덕터㈜ 가상 손익 항목을 IFRS 18의 5개 범주로 재배치합니다. 단위: 억원. 아래 KPI는 신규 의무 소계입니다.</p>
+
+    <div class="grid g3" id="kpis"></div>
+
+    <div class="toolbar" style="margin-top:20px">
+      <label>범주 필터:</label>
+      <select id="catFilter">
+        <option value="all">전체</option>
+        <option value="op">영업 (Operating)</option>
+        <option value="inv">투자 (Investing)</option>
+        <option value="fin">재무 (Financing)</option>
+        <option value="tax">법인세</option>
+        <option value="disc">중단영업</option>
+      </select>
+      <label style="margin-left:8px">환율 민감도(USD/KRW): <b id="fxLabel">1,350</b></label>
+      <input type="range" id="fx" min="1200" max="1500" step="10" value="1350" />
+    </div>
+
+    <div class="legend">
+      <span><i class="dot" style="background:var(--op)"></i>영업</span>
+      <span><i class="dot" style="background:var(--inv)"></i>투자</span>
+      <span><i class="dot" style="background:var(--fin)"></i>재무</span>
+      <span><i class="dot" style="background:var(--tax)"></i>법인세</span>
+      <span><i class="dot" style="background:var(--disc)"></i>중단영업</span>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>범주별 손익 구성</h3>
+        <div id="bars"></div>
+      </div>
+      <div class="card">
+        <h3>신규 손익계산서 구조 (단위: 억원)</h3>
+        <div id="pnl"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>항목별 재분류 상세</h3>
+      <table>
+        <thead><tr><th>손익 항목</th><th>구(IAS1) 위치</th><th>IFRS 18 범주</th><th class="num">금액(억원)</th><th>SAP 전기 포인트</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p class="note">※ 외환손익은 환율 슬라이더에 연동됩니다. 영업활동 관련 외환손익은 영업, 차입금 관련은 재무로 구분(IFRS 18 범주 귀속 판단).</p>
+    </div>
+  </section>
+
+  <!-- ===================== ③ SAP FI 영향 매트릭스 ===================== -->
+  <section id="sapfi">
+    <h2>SAP FI (S/4HANA 1909) 영향 매트릭스</h2>
+    <p class="sub">IFRS 18 요구사항별로 S/4HANA 1909 재무회계 구성요소에 미치는 영향과 대응 설정을 정리했습니다.</p>
+    <div class="impact" id="impact"></div>
+    <p class="note" style="margin-top:14px">※ 1909는 Universal Journal(ACDOCA) 기반이므로 범주 구분은 신규 <code>GL 계정그룹 / Semantic Tag</code> 또는 <code>FSV 노드 재구성</code>으로 구현하는 것이 일반적입니다. MPM은 ACDOCA 확장필드 또는 Group Reporting(필요 시)으로 대응합니다.</p>
+  </section>
+
+  <!-- ===================== ④ 로드맵 ===================== -->
+  <section id="roadmap">
+    <h2>대응 로드맵 &amp; 체크리스트</h2>
+    <p class="sub">최초적용(2027) 기준 역산 일정과 FI 실무 체크리스트입니다. 체크리스트 항목을 클릭하면 완료 표시됩니다.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>단계별 로드맵</h3>
+        <div class="timeline" id="timeline"></div>
+      </div>
+      <div class="card">
+        <h3>FI 실무 체크리스트 <span id="checkCount" style="font-size:12px;color:var(--muted)"></span></h3>
+        <ul class="check" id="checklist"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  IFRS 18 대응 대시보드 · 반도체 제조업 가상 사례(삼진세미컨덕터㈜) · SAP S/4HANA 1909 FI 관점<br/>
+  ⚠ 본 자료의 수치·사명은 교육용 가상 데이터이며, 실제 회계·세무 판단은 공인 전문가 검토가 필요합니다.
+</footer>
+
+<script>
+/* ====================== 데이터 ====================== */
+// 손익 항목 (단위: 억원). cat: op/inv/fin/tax/disc, fxSensitive: 환율연동 여부
+const BASE_FX = 1350;
+const items = [
+  { name:"반도체 제품 매출",         old:"매출액",        cat:"op",   amt: 42000, sap:"VKOA→수익계정 / ACDOCA" },
+  { name:"매출원가(재료·노무·경비)", old:"매출원가",      cat:"op",   amt:-27000, sap:"재고소비 전기(MM-FI)" },
+  { name:"설비 감가상각비(Fab)",     old:"매출원가/판관", cat:"op",   amt:-6200,  sap:"AA 감가상각 run → FI" },
+  { name:"연구개발비(R&D)",          old:"판관비",        cat:"op",   amt:-3800,  sap:"CO 원가요소→FI" },
+  { name:"판매관리비",               old:"판관비",        cat:"op",   amt:-2100,  sap:"비용 G/L 전기" },
+  { name:"영업활동 외환손익",        old:"영업외손익",    cat:"op",   amt: 350, fxSensitive:true, sap:"외화평가(FAGL_FCV)" },
+  { name:"설비 처분손익",            old:"영업외손익",    cat:"inv",  amt: 180,   sap:"AA 자산처분 전기" },
+  { name:"지분법 투자손익(관계기업)",old:"영업외손익",    cat:"inv",  amt: 620,   sap:"수동전표/Group Rep." },
+  { name:"금융자산 배당·이자수익",   old:"영업외손익",    cat:"inv",  amt: 240,   sap:"수익 G/L / 뱅킹 IF" },
+  { name:"차입금 이자비용",          old:"영업외손익",    cat:"fin",  amt:-980,   sap:"CML/수동전표→FI" },
+  { name:"리스부채 이자(IFRS16)",    old:"영업외손익",    cat:"fin",  amt:-310,   sap:"Lease Acctg→FI" },
+  { name:"차입금 외환손익",          old:"영업외손익",    cat:"fin",  amt:-260, fxSensitive:true, sap:"외화평가(FAGL_FCV)" },
+  { name:"법인세비용",               old:"법인세",        cat:"tax",  amt:-1150,  sap:"세금계정/신고IF" },
+  { name:"중단영업(디스플레이 사업)",old:"중단영업",      cat:"disc", amt:-180,   sap:"Profit Center 분리" },
+];
+
+const catMeta = {
+  op:{label:"영업",color:getCSS('--op'),pill:"cat-op"},
+  inv:{label:"투자",color:getCSS('--inv'),pill:"cat-inv"},
+  fin:{label:"재무",color:getCSS('--fin'),pill:"cat-fin"},
+  tax:{label:"법인세",color:getCSS('--tax'),pill:"cat-tax"},
+  disc:{label:"중단영업",color:getCSS('--disc'),pill:"cat-disc"},
+};
+
+function getCSS(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#4f8cff';}
+
+/* SAP FI 영향 매트릭스 */
+const impacts = [
+  { req:"5개 범주 손익 구분", sev:"h",
+    detail:"기존 FSV(재무제표버전)의 손익 노드가 영업/투자/재무 범주를 구분하지 못함. 영업이익·재무법인세차감전이익 소계 신설 필요.",
+    sap:"재무제표버전(OB58) 노드 재설계 · G/L 마스터에 범주 식별 속성(계정그룹/텍스트) 추가 · ACDOCA 리포팅 기준 재정의" },
+  { req:"영업이익 신규 소계", sev:"h",
+    detail:"IFRS 18이 요구하는 '영업이익'은 종전 관리손익과 정의가 다를 수 있어 재정의 필요.",
+    sap:"FSV 소계 노드 추가 · 범주 매핑 테이블 설계 · (필요시) Group Reporting 선택항목(FS Item) 매핑" },
+  { req:"MPM(조정영업이익) 공시", sev:"m",
+    detail:"비GAAP 지표의 조정내역·세효과를 체계적으로 산출·공시해야 함. 수작업 스프레드시트 리스크.",
+    sap:"ACDOCA 확장필드 또는 CO-PA 특성으로 조정항목 태깅 · 공시용 추출 쿼리(CDS View) 구성" },
+  { req:"비용 성격별 분해 공시", sev:"m",
+    detail:"기능별 표시(매출원가/판관비) 기업은 성격별(감가상각·급여·원재료) 분해 주석 필요.",
+    sap:"원가요소(Cost Element) ↔ 성격별 분류 매핑 · CO 보고서 또는 CDS View로 분해 산출" },
+  { req:"외환손익 범주 귀속", sev:"m",
+    detail:"외환손익을 영업/투자/재무 중 관련 활동에 귀속시켜야 함(종전 일괄 영업외).",
+    sap:"외화평가(FAGL_FCV) 결과 계정을 활동별로 분리 · 평가영역/계정결정 재구성" },
+  { req:"중단영업 구분표시", sev:"l",
+    detail:"중단영업 손익을 별도 범주로 표시. 반도체+디스플레이 등 사업부 분리 시 발생.",
+    sap:"Profit Center / Segment로 사업 구분 · FSV에 중단영업 노드 분리" },
+  { req:"비교표시·전환(최초적용)", sev:"h",
+    detail:"최초적용 시 비교연도도 IFRS 18 형식으로 재작성 필요(소급 적용).",
+    sap:"과거 ACDOCA 데이터 재분류 매핑 · 비교기간 리포트 병행 산출 · 전환조정 문서화" },
+];
+
+/* 로드맵 */
+const phases = [
+  { when:"T-18개월 (2025 하반기)", title:"영향분석 · GAP 진단",
+    items:["IFRS 18 전 항목 vs 현행 손익표시 GAP 분석","반도체 특유 항목(설비·R&D·지분법·외환) 범주 귀속 정책 수립","MPM 후보 식별(조정 영업이익/EBITDA)"] },
+  { when:"T-12개월 (2026 상반기)", title:"회계정책 · 매핑 설계",
+    items:["5개 범주 매핑 규칙서 작성","FSV·G/L·CO 매핑 설계","MPM 조정항목 정의 및 세효과 산출 방법 확정"] },
+  { when:"T-6개월 (2026 하반기)", title:"SAP FI 구성 · 구축",
+    items:["S/4HANA 1909 FSV 재구성 · G/L 속성 반영","외화평가 계정결정 재구성","공시용 CDS View / 추출 쿼리 개발 · 테스트"] },
+  { when:"T-3개월 (2026 Q4)", title:"병행 운영 · 검증",
+    items:["구/신 손익표 병행 산출 대사","비교연도 소급 재작성 데이터 검증","감사인 사전 협의"] },
+  { when:"T0 (2027.1.1~)", title:"최초적용 · 공시",
+    items:["IFRS 18 형식 재무제표 작성","MPM·비용분해 주석 공시","분기보고 안정화 모니터링"] },
+];
+
+/* 체크리스트 */
+const checks = [
+  "현행 재무제표버전(FSV) 노드 구조 Export 및 분석",
+  "G/L 계정별 IFRS18 범주(영업/투자/재무/법인세/중단) 매핑표 작성",
+  "영업이익·재무법인세차감전이익 소계 노드 FSV 신설",
+  "외화평가(FAGL_FCV) 손익 계정의 활동별 분리 설계",
+  "설비 처분·지분법 손익의 투자범주 귀속 전기 규칙 확정",
+  "차입금·리스 관련 손익의 재무범주 매핑 확정",
+  "MPM(조정 영업이익) 조정항목 태깅 필드 설계(ACDOCA/CO-PA)",
+  "비용 성격별 분해용 원가요소↔성격 매핑 테이블 작성",
+  "공시용 CDS View / 추출 리포트 개발 및 UAT",
+  "비교연도 소급 재작성 데이터 재분류 및 대사",
+  "감사인과 범주 귀속·MPM 공시 범위 사전 합의",
+];
+
+/* ====================== 렌더링 ====================== */
+let currentFx = BASE_FX;
+let catFilter = "all";
+
+function fxAdj(it){
+  if(!it.fxSensitive) return it.amt;
+  // 환율이 오르면 USD 매출/부채 노출에 따라 손익 변동(간단 모델)
+  const factor = currentFx / BASE_FX;
+  return Math.round(it.amt * factor);
+}
+
+function fmt(n){ return (n<0?"-":"") + Math.abs(n).toLocaleString("ko-KR"); }
+
+function computeTotals(){
+  const t={op:0,inv:0,fin:0,tax:0,disc:0};
+  items.forEach(it=>{ t[it.cat]+=fxAdj(it); });
+  const operatingProfit = t.op;                        // 영업이익
+  const beforeFinTax = t.op + t.inv;                   // 재무·법인세차감전이익
+  const beforeTax = beforeFinTax + t.fin;              // 법인세차감전이익
+  const net = beforeTax + t.tax + t.disc;              // 당기순이익
+  return {t, operatingProfit, beforeFinTax, beforeTax, net};
+}
+
+function renderKPIs(){
+  const {operatingProfit, beforeFinTax, beforeTax, net} = computeTotals();
+  const kpis=[
+    {lbl:"영업이익 (신규 소계)", val:operatingProfit, hint:"Operating"},
+    {lbl:"재무·법인세차감전이익 (신규 소계)", val:beforeFinTax, hint:"Op + Investing"},
+    {lbl:"당기순이익", val:net, hint:"법인세·중단영업 반영"},
+  ];
+  document.getElementById("kpis").innerHTML = kpis.map(k=>`
+    <div class="card kpi">
+      <span class="lbl">${k.lbl}</span>
+      <span class="val">${fmt(k.val)}<span style="font-size:13px;color:var(--muted)"> 억원</span></span>
+      <span class="delta ${k.val>=0?'up':'down'}">${k.hint}</span>
+    </div>`).join("");
+}
+
+function renderBars(){
+  const {t}=computeTotals();
+  const cats=["op","inv","fin","tax","disc"];
+  const max=Math.max(...cats.map(c=>Math.abs(t[c])),1);
+  document.getElementById("bars").innerHTML = cats.map(c=>{
+    const v=t[c]; const w=Math.abs(v)/max*100;
+    return `<div class="barrow">
+      <span><span class="pill ${catMeta[c].pill}">${catMeta[c].label}</span></span>
+      <div class="bartrack"><div class="barfill" style="width:${w}%;background:${catMeta[c].color}"></div></div>
+      <span class="num" style="text-align:right">${fmt(v)} 억</span>
+    </div>`;
+  }).join("");
+}
+
+function renderPnL(){
+  const {t, operatingProfit, beforeFinTax, beforeTax, net}=computeTotals();
+  const line=(label,val,bold)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);${bold?'font-weight:700;color:var(--accent2)':''}">
+    <span>${label}</span><span class="num">${fmt(val)}</span></div>`;
+  document.getElementById("pnl").innerHTML =
+    line("영업 손익 합계", t.op) +
+    line("＝ 영업이익", operatingProfit, true) +
+    line("투자 손익 합계", t.inv) +
+    line("＝ 재무·법인세차감전이익", beforeFinTax, true) +
+    line("재무 손익 합계", t.fin) +
+    line("＝ 법인세차감전이익", beforeTax, true) +
+    line("법인세비용", t.tax) +
+    line("중단영업손익", t.disc) +
+    line("＝ 당기순이익", net, true);
+}
+
+function renderRows(){
+  const tb=document.getElementById("rows");
+  const list = items.filter(it=>catFilter==="all"||it.cat===catFilter);
+  tb.innerHTML = list.map(it=>{
+    const amt=fxAdj(it);
+    const fxTag = it.fxSensitive?' <span style="color:var(--warn);font-size:11px">⟳환율</span>':'';
+    return `<tr>
+      <td>${it.name}${fxTag}</td>
+      <td style="color:var(--muted)">${it.old}</td>
+      <td><span class="pill ${catMeta[it.cat].pill}">${catMeta[it.cat].label}</span></td>
+      <td class="num">${fmt(amt)}</td>
+      <td style="color:var(--muted);font-size:12px">${it.sap}</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderImpact(){
+  const sevMap={h:["sev-h","High"],m:["sev-m","Medium"],l:["sev-l","Low"]};
+  document.getElementById("impact").innerHTML = impacts.map(x=>`
+    <div class="row">
+      <div><span class="mod">${x.req}</span><span class="sev ${sevMap[x.sev][0]}">${sevMap[x.sev][1]}</span></div>
+      <div>
+        <div style="margin-bottom:6px">${x.detail}</div>
+        <small><b style="color:var(--accent2)">SAP FI 대응:</b> ${x.sap}</small>
+      </div>
+    </div>`).join("");
+}
+
+function renderTimeline(){
+  document.getElementById("timeline").innerHTML = phases.map(p=>`
+    <div class="phase">
+      <span class="when">${p.when}</span>
+      <h4>${p.title}</h4>
+      <ul>${p.items.map(i=>`<li>${i}</li>`).join("")}</ul>
+    </div>`).join("");
+}
+
+function renderChecklist(){
+  const ul=document.getElementById("checklist");
+  ul.innerHTML = checks.map((c,i)=>`<li data-i="${i}"><span class="box"></span><span>${c}</span></li>`).join("");
+  ul.querySelectorAll("li").forEach(li=>{
+    li.addEventListener("click",()=>{
+      li.classList.toggle("done");
+      li.querySelector(".box").textContent = li.classList.contains("done")?"✓":"";
+      updateCheckCount();
+    });
+  });
+  updateCheckCount();
+}
+function updateCheckCount(){
+  const done=document.querySelectorAll("#checklist li.done").length;
+  document.getElementById("checkCount").textContent = `(${done}/${checks.length} 완료)`;
+}
+
+/* ====================== 이벤트 ====================== */
+document.getElementById("nav").addEventListener("click",e=>{
+  const btn=e.target.closest("button"); if(!btn) return;
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById(btn.dataset.tab).classList.add("active");
+});
+
+document.getElementById("catFilter").addEventListener("change",e=>{
+  catFilter=e.target.value; renderRows();
+});
+
+document.getElementById("fx").addEventListener("input",e=>{
+  currentFx=+e.target.value;
+  document.getElementById("fxLabel").textContent = currentFx.toLocaleString("ko-KR");
+  renderKPIs(); renderBars(); renderPnL(); renderRows();
+});
+
+/* ====================== 초기화 ====================== */
+renderKPIs(); renderBars(); renderPnL(); renderRows();
+renderImpact(); renderTimeline(); renderChecklist();
+</script>
+</body>
+</html>
